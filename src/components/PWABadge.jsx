@@ -66,7 +66,7 @@ export default function PWABadge() {
       <aside className="pwa-badge" role="region" aria-label="Install App">
         <div className="pwa-badge-content">
           <Download size={16} stroke="var(--brass)" />
-          <span>Install <strong>Partitur &amp; Lib</strong> for offline access.</span>
+          <span>Install <strong>PARTITURLIB</strong> for offline access.</span>
         </div>
         <div className="pwa-badge-actions">
           <button
