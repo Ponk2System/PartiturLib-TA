@@ -1,0 +1,196 @@
+/* ==========================================================================
+   PartiturLib — Splash Screen Animation
+   Intro Animation with Centered Musical Score Branding
+   ========================================================================== */
+
+.splash-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 50%, #1f170e 0%, #0d0f14 55%, #040507 100%);
+  isolation: isolate;
+  z-index: 99999;
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.splash-overlay--fading {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Ambient glow in center */
+.splash-ambient-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.18) 0%, rgba(217, 119, 6, 0.06) 50%, transparent 70%);
+  pointer-events: none;
+  filter: blur(35px);
+  animation: splash-pulse 3s ease-in-out infinite alternate;
+}
+
+/* Central container for Emblem & Brand */
+.splash-center {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  z-index: 2;
+  animation: splash-centerIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Center Emblem */
+.splash-emblem {
+  width: 106px;
+  height: 106px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 50px rgba(245, 158, 11, 0.5), 0 10px 30px rgba(0, 0, 0, 0.6);
+  margin-bottom: 24px;
+  animation: splash-float 3s ease-in-out infinite alternate;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+}
+
+.splash-emblem svg {
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.35));
+}
+
+/* Brand Text */
+.splash-brand {
+  text-align: center;
+  color: #f6f3ec;
+}
+
+.splash-brand-name {
+  font-family: 'Arial Narrow', 'Franklin Gothic Medium', 'Roboto Condensed', Georgia, serif;
+  font-size: clamp(34px, 6vw, 50px);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.9);
+  margin: 0;
+}
+
+.splash-brand-name span {
+  color: #fbbf24;
+}
+
+.splash-brand-sub {
+  margin-top: 10px;
+  font-size: 12px;
+  letter-spacing: 0.28em;
+  color: #fbbf24;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.splash-divider {
+  width: 100px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #fbbf24, transparent);
+  margin: 18px auto 0;
+}
+
+/* Skip / Enter Action */
+.splash-skip-btn {
+  position: absolute;
+  bottom: 28px;
+  right: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(22, 17, 12, 0.75);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  border-radius: 9999px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.splash-skip-btn:hover {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: #fbbf24;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+}
+
+.splash-hint {
+  position: absolute;
+  bottom: 32px;
+  left: 28px;
+  font-size: 12px;
+  color: rgba(246, 243, 236, 0.4);
+  letter-spacing: 0.05em;
+  pointer-events: none;
+}
+
+/* Animations */
+@keyframes splash-centerIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.88) translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes splash-float {
+  0% {
+    transform: translateY(0);
+    box-shadow: 0 0 40px rgba(245, 158, 11, 0.4), 0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+  100% {
+    transform: translateY(-6px);
+    box-shadow: 0 0 60px rgba(245, 158, 11, 0.6), 0 14px 32px rgba(0, 0, 0, 0.6);
+  }
+}
+
+@keyframes splash-pulse {
+  0% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-overlay *,
+  .splash-overlay *::before,
+  .splash-overlay *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
