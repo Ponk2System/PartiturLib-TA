@@ -102,30 +102,68 @@ export default function ScoreCard({ score, onSelect, onEdit, onDelete }) {
           {composer} {arranger ? `· ${arranger}` : ''}
         </span>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', margin: '6px 0' }}>
+        <div
+          className="card-badges"
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '0 16px',
+            margin: '6px 0 10px',
+            width: '100%',
+            boxSizing: 'border-box',
+          }}
+        >
           <span
+            className="card-badge card-badge--category"
             style={{
-              fontSize: '0.75rem',
-              padding: '2px 8px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '24px',
+              padding: '0 10px',
               borderRadius: '999px',
               backgroundColor: 'rgba(180, 130, 60, 0.15)',
               color: 'var(--brass)',
+              fontSize: '0.75rem',
               fontWeight: 500,
+              lineHeight: 1,
+              boxSizing: 'border-box',
+              whiteSpace: 'nowrap',
             }}
           >
             {category}
           </span>
           {keySig && (
             <span
+              className="card-badge card-badge--key"
               style={{
-                fontSize: '0.75rem',
-                padding: '2px 8px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
+                height: '24px',
+                padding: '0 10px',
                 borderRadius: '999px',
                 backgroundColor: 'rgba(100, 116, 139, 0.15)',
                 color: 'var(--steel)',
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                lineHeight: 1,
+                boxSizing: 'border-box',
+                whiteSpace: 'nowrap',
               }}
             >
-              ♫ {keySig}
+              <span
+                className="card-badge-icon"
+                aria-hidden="true"
+                style={{ display: 'inline-flex', alignItems: 'center', lineHeight: 1 }}
+              >
+                ♫
+              </span>
+              <span>{keySig}</span>
             </span>
           )}
         </div>
@@ -134,13 +172,53 @@ export default function ScoreCard({ score, onSelect, onEdit, onDelete }) {
           <span className="card-desc">{truncate(item.description, 75)}</span>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: '8px' }}>
-          <span style={{ fontSize: '0.85rem', color: 'var(--steel)' }}>
+        <div
+          className="card-footer"
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            width: '100%',
+            boxSizing: 'border-box',
+            padding: '12px 16px 0',
+            marginTop: 'auto',
+          }}
+        >
+          <span
+            className="card-footer-item card-footer-year"
+            style={{
+              fontSize: '0.85rem',
+              color: 'var(--steel)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              lineHeight: 1.2,
+            }}
+          >
             {year ? `Tahun: ${year}` : ''}
           </span>
           {item.duration && (
-            <span style={{ fontSize: '0.8rem', color: 'var(--steel)' }}>
-              ⏱ {item.duration}
+            <span
+              className="card-footer-item card-footer-duration"
+              style={{
+                fontSize: '0.8rem',
+                color: 'var(--steel)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                lineHeight: 1.2,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span
+                className="card-footer-icon"
+                aria-hidden="true"
+                style={{ display: 'inline-flex', alignItems: 'center', lineHeight: 1 }}
+              >
+                ⏱
+              </span>
+              <span>{item.duration}</span>
             </span>
           )}
         </div>

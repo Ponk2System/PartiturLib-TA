@@ -462,6 +462,88 @@
   flex: 1;
 }
 
+/* Card Badges (Category & Key Signature) */
+.card-badges {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  margin: 6px 0 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.card-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.card-badge--category {
+  background-color: rgba(180, 130, 60, 0.15);
+  color: var(--brass);
+}
+
+.card-badge--key {
+  background-color: rgba(100, 116, 139, 0.15);
+  color: var(--steel);
+}
+
+.card-badge-icon {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  font-size: 0.75rem;
+}
+
+/* Card Footer (Year & Duration) */
+.card-footer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 16px 0;
+  margin-top: auto;
+}
+
+.card-footer-item {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1.2;
+}
+
+.card-footer-year {
+  font-size: 0.85rem;
+  color: var(--steel);
+}
+
+.card-footer-duration {
+  font-size: 0.8rem;
+  color: var(--steel);
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.card-footer-icon {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
 .price {
   color: var(--brass);
   font-weight: 700;
