@@ -112,8 +112,8 @@ export default function Catalog({ onNavigate }) {
   return (
     <>
       <section className="masthead">
-        <h1 className="display" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Music size={32} color="var(--brass)" /> Perpustakaan &amp; Arsip Partitur
+        <h1 className="display" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <Music size={28} color="var(--brass)" style={{ flexShrink: 0 }} /> Perpustakaan &amp; Arsip Partitur
         </h1>
         <p className="lede">
           Koleksi partitur lengkap mulai dari simfoni orkestra, string section,

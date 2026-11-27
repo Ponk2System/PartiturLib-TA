@@ -170,14 +170,14 @@ export default function EditScorePage({ score, onBack, onSuccess }) {
   }
 
   return (
-    <div className="form-page" style={{ maxWidth: '900px', margin: '0 auto', padding: '24px 16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+    <div className="form-page">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
         <button type="button" className="detail-back" onClick={onBack} style={{ margin: 0 }}>
           <ArrowLeft size={18} /> Kembali
         </button>
       </div>
 
-      <h1 className="display" style={{ fontSize: '2rem', marginBottom: '8px' }}>
+      <h1 className="display" style={{ fontSize: 'clamp(1.6rem, 5vw, 2.2rem)', marginBottom: '8px', wordBreak: 'break-word' }}>
         Edit Partitur: {item.title || item.name}
       </h1>
       <p style={{ color: 'var(--steel)', marginBottom: '24px' }}>
@@ -198,7 +198,7 @@ export default function EditScorePage({ score, onBack, onSuccess }) {
 
       <form onSubmit={handleSubmit}>
         {/* PDF & Cover Row */}
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '24px', padding: '16px', border: '1px solid var(--line)', borderRadius: '8px' }}>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '24px', padding: '16px', border: '1px solid var(--line)', borderRadius: '8px' }}>
           <div style={{ width: '120px', height: '160px', position: 'relative', flexShrink: 0, borderRadius: '6px', overflow: 'hidden', backgroundColor: '#eee' }}>
             {extractingCover ? (
               <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

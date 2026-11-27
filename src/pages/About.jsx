@@ -1,6 +1,6 @@
 function About() {
   return (
-    <div className="page" style={{ maxWidth: '800px', margin: '0 auto', padding: '24px 16px' }}>
+    <div className="page" style={{ maxWidth: '800px', margin: '0 auto' }}>
       <h1 className="display">Tentang PartiturLib</h1>
       <p className="lede" style={{ lineHeight: '1.8' }}>
         PartiturLib adalah platform Progressive Web App (PWA) yang dirancang khusus untuk mempermudah

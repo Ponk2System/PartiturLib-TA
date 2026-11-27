@@ -1,6 +1,6 @@
 function Contact() {
   return (
-    <div className="page" style={{ maxWidth: '800px', margin: '0 auto', padding: '24px 16px' }}>
+    <div className="page" style={{ maxWidth: '800px', margin: '0 auto' }}>
       <h1 className="display">Hubungi Kami</h1>
       <p className="lede">
         Punya pertanyaan seputar pengarsipan partitur, lisensi karya, atau ingin berkontribusi partitur orkestra?

@@ -123,12 +123,12 @@ export default function ScoreDetail({ score, onBack, onEdit, onDelete }) {
 
       {/* Hero section */}
       <div className="detail-hero">
-        <div style={{ position: 'relative', flexShrink: 0 }}>
+        <div style={{ position: 'relative', width: '100%', maxWidth: '360px', margin: '0 auto' }}>
           <img
             className="detail-img"
             src={coverUrl}
             alt={title}
-            style={{ borderRadius: '8px', boxShadow: '0 4px 14px rgba(0,0,0,0.3)', width: '300px', height: '400px', objectFit: 'cover' }}
+            style={{ borderRadius: '8px', boxShadow: '0 4px 14px rgba(0,0,0,0.3)', width: '100%', height: 'auto', maxHeight: '420px', aspectRatio: '3/4', objectFit: 'cover', display: 'block' }}
           />
           <button
             type="button"
@@ -211,8 +211,8 @@ export default function ScoreDetail({ score, onBack, onEdit, onDelete }) {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-              gap: '12px',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))',
+              gap: '10px',
               margin: '16px 0',
               padding: '12px',
               background: 'rgba(0,0,0,0.03)',
@@ -260,7 +260,7 @@ export default function ScoreDetail({ score, onBack, onEdit, onDelete }) {
           )}
 
           {/* Main Action Bar */}
-          <div className="detail-actions" style={{ flexWrap: 'wrap', marginTop: '16px' }}>
+          <div className="detail-actions">
             <FavoriteButton scoreId={item.id || title} />
 
             <a
@@ -301,8 +301,8 @@ export default function ScoreDetail({ score, onBack, onEdit, onDelete }) {
       {/* Embedded PDF Viewer Section */}
       {showPdfViewer && (
         <section className="detail-section" style={{ border: '2px solid var(--brass)', borderRadius: '8px', padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0, fontSize: '1.15rem' }}>
               <FileText size={20} color="var(--brass)" /> Penampil Partitur PDF Langsung
             </h2>
             <div style={{ display: 'flex', gap: '8px' }}>
@@ -325,7 +325,7 @@ export default function ScoreDetail({ score, onBack, onEdit, onDelete }) {
             </div>
           </div>
 
-          <div style={{ width: '100%', height: '700px', backgroundColor: '#525659', borderRadius: '6px', overflow: 'hidden' }}>
+          <div style={{ width: '100%', height: 'min(700px, calc(100dvh - 160px))', minHeight: '380px', backgroundColor: '#525659', borderRadius: '6px', overflow: 'hidden' }}>
             <iframe
               src={`${fileUrl}#toolbar=1&navpanes=1&scrollbar=1`}
               title={`Partitur ${title}`}

@@ -64,8 +64,8 @@ export default function FavoritesPage({ onSelectScore, onSelectGun, onNavigateCa
   return (
     <div className="fav-page">
       <section className="masthead">
-        <h1 className="display" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Music size={32} color="var(--brass)" /> Repertoar Partitur Saya
+        <h1 className="display" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <Music size={28} color="var(--brass)" style={{ flexShrink: 0 }} /> Repertoar Partitur Saya
         </h1>
         <p className="lede">
           Daftar karya musik dan partitur yang Anda simpan untuk latihan, persiapan konser, atau studi pribadi.
