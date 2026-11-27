@@ -1,6 +1,3 @@
-import { Plus, Music } from 'lucide-react'
-import { useFavorites } from '../hooks/useFavorites'
-
 import { useState } from 'react'
 import { Plus, Music, Heart, User, MoreHorizontal, Info, Phone, X } from 'lucide-react'
 import { useFavorites } from '../hooks/useFavorites'
