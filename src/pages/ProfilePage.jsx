@@ -1,214 +1,75 @@
 import { useState } from 'react'
-import {
-  Shield,
-  Copy,
-  Check,
-  Save,
-  Heart,
-  FileText,
-  Camera,
-  Play,
-} from 'lucide-react'
-import userService from '../services/userService'
-import { useFavorites } from '../hooks/useFavorites'
+import { LogIn, LogOut, Save, ShieldCheck, UserRound, UserPlus } from 'lucide-react'
+import authService from '../services/authService'
 
-/**
- * Get count of active drafts in localStorage
- */
-const getActiveDraftCount = () => {
-  try {
-    let count = 0
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      if (key && (key.startsWith('score_draft_') || key.startsWith('partitur_draft_') || key.startsWith('partitur_lib_draft_'))) {
-        count++
+export default function ProfilePage({ onReplaySplash, onAuthChange }) {
+  const [profile, setProfile] = useState(() => authService.getCurrentProfile())
+  const [mode, setMode] = useState('login')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [username, setUsername] = useState(() => profile?.username || '')
+  const [bio, setBio] = useState(() => profile?.bio || '')
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const sync = (next) => {
+    setProfile(next)
+    setUsername(next?.username || '')
+    setBio(next?.bio || '')
+    onAuthChange?.(next)
+  }
+
+  const submitAuth = async (event) => {
+    event.preventDefault(); setError(''); setMessage(''); setBusy(true)
+    try {
+      if (mode === 'register') {
+        const result = await authService.signUp({ email: email.trim(), password, username: username.trim() || 'Musisi' })
+        if (result.requiresEmailConfirmation) setMessage('Akun dibuat. Periksa email Anda untuk mengonfirmasi akun, lalu masuk.')
+        else sync(await authService.refreshProfile())
+      } else {
+        sync(await authService.signIn({ email: email.trim(), password }))
       }
-    }
-    return count
-  } catch {
-    return 0
-  }
-}
-
-/**
- * ProfilePage — User identity and Armory settings.
- * Manages operator profile, identifier, favorites stats, and draft storage.
- */
-export default function ProfilePage({ onReplaySplash }) {
-  const [profile, setProfile] = useState(() => userService.getUserProfile())
-  const [username, setUsername] = useState(profile.username || 'Musisi')
-  const [bio, setBio] = useState(profile.bio || '')
-  const [avatar, setAvatar] = useState(profile.avatar || null)
-  const [copied, setCopied] = useState(false)
-  const [feedback, setFeedback] = useState('')
-
-  const { favorites } = useFavorites()
-  const [draftCount] = useState(getActiveDraftCount)
-
-  const handleCopyId = () => {
-    if (profile.userId) {
-      navigator.clipboard.writeText(profile.userId)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
+    } catch (err) { setError(err.message || 'Autentikasi gagal.') } finally { setBusy(false) }
   }
 
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-
-    if (file.size > 2 * 1024 * 1024) {
-      setFeedback('Ukuran avatar harus di bawah 2MB.')
-      setTimeout(() => setFeedback(''), 3000)
-      return
-    }
-
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const base64 = event.target.result
-      setAvatar(base64)
-      userService.updateAvatar(base64)
-      setFeedback('Foto profil berhasil diperbarui.')
-      setTimeout(() => setFeedback(''), 3000)
-    }
-    reader.readAsDataURL(file)
+  const saveProfile = async (event) => {
+    event.preventDefault(); setError(''); setMessage(''); setBusy(true)
+    try {
+      const next = await authService.updateProfile({ username: username.trim() || 'Musisi', bio: bio.trim(), avatar: profile.avatar || null })
+      sync(next); setMessage('Profil berhasil disimpan.')
+    } catch (err) { setError(err.message || 'Gagal menyimpan profil.') } finally { setBusy(false) }
   }
 
-  const handleSaveProfile = (e) => {
-    e.preventDefault()
-    const updated = {
-      ...profile,
-      username: username.trim() || 'Musisi',
-      bio: bio.trim(),
-      avatar,
-    }
-    const result = userService.saveUserProfile(updated)
-    if (result.success) {
-      setProfile(result.data)
-      setFeedback('Profil berhasil disimpan.')
-      setTimeout(() => setFeedback(''), 3000)
-    } else {
-      setFeedback('Gagal menyimpan profil.')
-    }
-  }
+  if (!profile?.id) return (
+    <div className="profile-page">
+      <section className="masthead"><h1 className="display">Masuk ke PartiturLib</h1><p className="lede">Akun diperlukan untuk mengunggah partitur. Pengunjung tetap dapat melihat koleksi.</p></section>
+      <form className="profile-form" onSubmit={submitAuth}>
+        <h3 className="section-title">{mode === 'login' ? 'Masuk' : 'Buat Akun'}</h3>
+        {mode === 'register' && <div className="form-group"><label className="form-label" htmlFor="auth-name">Nama tampilan</label><input id="auth-name" className="form-input" value={username} onChange={(e) => setUsername(e.target.value)} required /></div>}
+        <div className="form-group"><label className="form-label" htmlFor="auth-email">Email</label><input id="auth-email" className="form-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
+        <div className="form-group"><label className="form-label" htmlFor="auth-password">Kata sandi</label><input id="auth-password" className="form-input" type="password" minLength="6" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
+        {error && <p className="form-error">{error}</p>}{message && <p className="form-success">{message}</p>}
+        <button className="btn btn--primary" disabled={busy} type="submit">{mode === 'login' ? <><LogIn size={16} /> Masuk</> : <><UserPlus size={16} /> Daftar</>}</button>
+        <button className="link-btn" type="button" onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); setMessage('') }}>{mode === 'login' ? 'Belum punya akun? Daftar' : 'Sudah punya akun? Masuk'}</button>
+      </form>
+    </div>
+  )
 
   return (
     <div className="profile-page">
-      <section className="masthead" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
-        <div>
-          <h1 className="display">Profil Musisi</h1>
-          <p className="lede">
-            Identitas musisi, statistik repertoar, dan preferensi akun perpustakaan partitur.
-          </p>
-        </div>
-        {onReplaySplash && (
-          <button
-            type="button"
-            className="btn btn--outline btn--sm"
-            onClick={onReplaySplash}
-            title="Putar ulang animasi intro splash"
-          >
-            <Play size={14} /> Putar Intro
-          </button>
-        )}
-      </section>
-
-      {feedback && (
-        <div className="toast toast--success">
-          <Check size={18} /> {feedback}
-        </div>
-      )}
-
-      {/* Operator Card */}
+      <section className="masthead"><h1 className="display">Profil Musisi</h1><p className="lede">Anda masuk sebagai <strong>{profile.role === 'admin' ? 'Admin' : 'User'}</strong>. {profile.role === 'admin' ? 'Admin dapat mengelola semua partitur.' : 'Anda hanya dapat mengelola unggahan sendiri.'}</p></section>
       <div className="profile-card">
         <div className="profile-card-top">
-          <div className="avatar-wrap">
-            {avatar ? (
-              <img src={avatar} alt={profile.username} className="avatar-img" />
-            ) : (
-              <div className="avatar-placeholder">
-                <Shield size={36} stroke="var(--brass)" />
-              </div>
-            )}
-            <label htmlFor="avatar-file-input" className="avatar-upload-btn" title="Upload avatar">
-              <Camera size={14} />
-              <input
-                id="avatar-file-input"
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                className="hidden-file-input"
-              />
-            </label>
-          </div>
-
-          <div className="profile-identity">
-            <h2 className="display">{profile.username || 'Shooter'}</h2>
-            <div className="profile-id-row">
-              <span className="mono-badge">{profile.userId}</span>
-              <button
-                type="button"
-                className="icon-btn"
-                onClick={handleCopyId}
-                title="Copy User ID to clipboard"
-              >
-                {copied ? <Check size={14} color="var(--brass)" /> : <Copy size={14} />}
-              </button>
+          <div className={`avatar-wrap avatar-wrap--${profile.role === 'admin' ? 'admin' : 'user'}`} aria-label={`Ikon ${profile.role === 'admin' ? 'admin' : 'user'}`}>
+            <div className="avatar-placeholder">
+              {profile.role === 'admin' ? <ShieldCheck size={38} /> : <UserRound size={38} />}
             </div>
           </div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="profile-stats">
-          <div className="stat-item">
-            <Heart size={20} className="stat-icon" stroke="var(--brass)" />
-            <div className="stat-val">{favorites.length}</div>
-            <div className="stat-label">Procurement Favorites</div>
-          </div>
-          <div className="stat-item">
-            <FileText size={20} className="stat-icon" stroke="var(--steel)" />
-            <div className="stat-val">{draftCount}</div>
-            <div className="stat-label">Saved Offline Drafts</div>
-          </div>
+          <div className="profile-identity"><h2 className="display">{profile.username}</h2><p>{profile.email || authService.getSession()?.user?.email}</p><span className="mono-badge">Role: {profile.role}</span></div>
         </div>
       </div>
-
-      {/* Profile Form */}
-      <form onSubmit={handleSaveProfile} className="profile-form">
-        <h3 className="section-title">Detail Musisi</h3>
-
-        <div className="form-group">
-          <label htmlFor="prof-name" className="form-label">
-            Musisi Nama
-          </label>
-          <input
-            id="prof-name"
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="e.g. Operator Delta, Master Gunsmith"
-            className="form-input"
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="prof-bio" className="form-label">
-            Musisi Bio
-          </label>
-          <textarea
-            id="prof-bio"
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            placeholder="Qualifications, preferred calibers, unit assignment..."
-            rows={3}
-            className="form-textarea"
-          />
-        </div>
-
-        <button type="submit" className="btn btn--primary">
-          <Save size={16} /> Simpan Profil Musisi
-        </button>
-      </form>
+      <form className="profile-form" onSubmit={saveProfile}><h3 className="section-title">Detail Akun</h3><div className="form-group"><label className="form-label" htmlFor="prof-name">Nama tampilan</label><input id="prof-name" className="form-input" value={username} onChange={(e) => setUsername(e.target.value)} required /></div><div className="form-group"><label className="form-label" htmlFor="prof-bio">Bio</label><textarea id="prof-bio" className="form-textarea" rows="3" value={bio} onChange={(e) => setBio(e.target.value)} /></div>{error && <p className="form-error">{error}</p>}{message && <p className="form-success">{message}</p>}<button type="submit" className="btn btn--primary" disabled={busy}><Save size={16} /> Simpan Profil</button><button type="button" className="btn btn--outline" onClick={() => { authService.signOut(); sync(null) }}><LogOut size={16} /> Keluar</button>{onReplaySplash && <button type="button" className="link-btn" onClick={onReplaySplash}>Putar intro</button>}</form>
     </div>
   )
 }

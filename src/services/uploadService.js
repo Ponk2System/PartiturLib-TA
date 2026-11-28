@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { BASE_URL, SUPABASE_KEY, IS_SUPABASE } from '../config/api'
+import { getAccessToken, isAuthenticated } from './authService'
 
 // ---------------------------------------------------------------------------
 // UploadService — Sheet Music PDF & Cover Image Upload Service.
@@ -62,12 +63,13 @@ class UploadService {
    * Generic file uploader to Supabase Storage with fallback.
    */
   async uploadFile(file, { bucket = 'scores', prefix = 'file', contentType = null } = {}) {
+    if (!isAuthenticated()) throw new Error('Silakan masuk dengan akun Anda untuk mengunggah partitur.')
     const ext = file.name.split('.').pop() || 'bin'
     const cleanBaseName = file.name
       .replace(/\.[^/.]+$/, '')
       .replace(/[^a-zA-Z0-9-_]/g, '_')
       .substring(0, 25)
-    const fileName = `${prefix}_${cleanBaseName}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}.${ext}`
+    const fileName = `${getAccessToken() ? 'user' : 'guest'}_${prefix}_${cleanBaseName}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}.${ext}`
     const mimeType = contentType || file.type || 'application/octet-stream'
 
     // Format human readable size
@@ -84,7 +86,7 @@ class UploadService {
           headers: {
             'Content-Type': mimeType,
             apikey: SUPABASE_KEY,
-            Authorization: `Bearer ${SUPABASE_KEY}`,
+            Authorization: `Bearer ${getAccessToken() || SUPABASE_KEY}`,
           },
           timeout: 45000,
         })

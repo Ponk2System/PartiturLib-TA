@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { Share2, Check, FileText } from 'lucide-react'
+import { Share2, Check, FileText, UserRound, CalendarDays, RotateCcw } from 'lucide-react'
 import FavoriteButton from '../common/FavoriteButton'
 import { truncate } from '../../utils/helpers'
 
 /**
  * ScoreCard — Card for displaying sheet music in the repertoire catalog.
  */
-export default function ScoreCard({ score, onSelect, onEdit, onDelete }) {
+export default function ScoreCard({ score, onSelect, onEdit, onDelete, onRestore, deleteLabel = 'Hapus Partitur', showSocialActions = true }) {
   const [copied, setCopied] = useState(false)
   const item = score || {}
 
@@ -61,7 +61,7 @@ export default function ScoreCard({ score, onSelect, onEdit, onDelete }) {
       <button
         type="button"
         className="card-btn"
-        onClick={() => onSelect(item)}
+        onClick={() => onSelect?.(item)}
         aria-label={`Lihat Partitur ${title}`}
       >
         <div style={{ position: 'relative', width: '100%', overflow: 'hidden', borderRadius: '8px 8px 0 0' }}>
@@ -172,6 +172,11 @@ export default function ScoreCard({ score, onSelect, onEdit, onDelete }) {
           <span className="card-desc">{truncate(item.description, 75)}</span>
         )}
 
+        <span style={{ padding: '0 16px', color: 'var(--steel)', fontSize: '0.78rem', display: 'inline-flex', gap: '5px', alignItems: 'center' }}>
+          <UserRound size={13} /> Diunggah oleh {item.uploader_name || 'PartiturLib'}
+          {item.created_at && <><CalendarDays size={13} /> {new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</>}
+        </span>
+
         <div
           className="card-footer"
           style={{
@@ -226,9 +231,9 @@ export default function ScoreCard({ score, onSelect, onEdit, onDelete }) {
 
       {/* Action buttons */}
       <div className="card-actions">
-        <FavoriteButton scoreId={item.id || title} />
+        {showSocialActions && <FavoriteButton scoreId={item.id || title} />}
 
-        <button
+        {showSocialActions && <button
           type="button"
           className={`card-act-btn ${copied ? 'card-act-btn--success' : ''}`}
           onClick={handleShare}
@@ -236,7 +241,7 @@ export default function ScoreCard({ score, onSelect, onEdit, onDelete }) {
           title={copied ? 'Tautan disalin!' : 'Bagikan partitur'}
         >
           {copied ? <Check size={16} /> : <Share2 size={16} />}
-        </button>
+        </button>}
 
         {onEdit && (
           <button
@@ -253,6 +258,21 @@ export default function ScoreCard({ score, onSelect, onEdit, onDelete }) {
           </button>
         )}
 
+        {onRestore && (
+          <button
+            type="button"
+            className="card-act-btn"
+            onClick={(e) => {
+              e.stopPropagation()
+              onRestore(item)
+            }}
+            aria-label={`Pulihkan ${title} ke katalog`}
+            title="Pulihkan ke Katalog"
+          >
+            <RotateCcw size={16} />
+          </button>
+        )}
+
         {onDelete && (
           <button
             type="button"
@@ -262,7 +282,7 @@ export default function ScoreCard({ score, onSelect, onEdit, onDelete }) {
               onDelete(item)
             }}
             aria-label={`Hapus ${title}`}
-            title="Hapus Partitur"
+            title={deleteLabel}
           >
             🗑️
           </button>

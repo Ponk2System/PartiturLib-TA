@@ -17,11 +17,24 @@ export const formatPrice = (price) => {
  */
 export const matchesSearch = (item, query) => {
   if (!query) return true
-  const q = query.toLowerCase()
-  return (
-    (item.name || '').toLowerCase().includes(q) ||
-    (item.description || '').toLowerCase().includes(q)
-  )
+  const q = query.trim().toLocaleLowerCase()
+  if (!q) return true
+
+  const toText = (value) => {
+    if (Array.isArray(value)) return value.map(toText).join(' ')
+    if (value && typeof value === 'object') return Object.values(value).map(toText).join(' ')
+    return String(value ?? '')
+  }
+
+  const searchableText = [
+    item.title, item.name, item.composer, item.caliber, item.arranger,
+    item.category, item.type, item.key_signature, item.difficulty,
+    item.tempo, item.time_signature, item.year_composed, item.year,
+    item.price, item.description, item.instrumentation, item.specs,
+    item.movements, item.steps, item.file_name, item.uploader_name,
+  ].map(toText).join(' ').toLocaleLowerCase()
+
+  return searchableText.includes(q)
 }
 
 /**

@@ -12,6 +12,9 @@ import {
   Eye,
   EyeOff,
   ExternalLink,
+  UserRound,
+  CalendarDays,
+  RotateCcw,
 } from 'lucide-react'
 import FavoriteButton from '../common/FavoriteButton'
 import { useReviews, useCreateReview } from '../../hooks/useReviews'
@@ -22,7 +25,7 @@ import { averageRating } from '../../utils/helpers'
  * ScoreDetail — Full detailed view of sheet music with embedded PDF viewer,
  * download link, instrument list, movements, and practice notes/reviews.
  */
-export default function ScoreDetail({ score, onBack, onEdit, onDelete }) {
+export default function ScoreDetail({ score, onBack, onEdit, onDelete, onRestore, showSocialActions = true }) {
   const item = score || {}
   const title = item.title || item.name || 'Untitled Score'
   const composer = item.composer || item.caliber || 'Unknown Composer'
@@ -206,6 +209,11 @@ export default function ScoreDetail({ score, onBack, onEdit, onDelete }) {
               Aransemen: {arranger}
             </p>
           )}
+          <div className="detail-uploader">
+            <UserRound size={15} /> Diunggah oleh {item.uploader_name || 'PartiturLib'}
+            {item.created_at && <><span>•</span><CalendarDays size={15} /> {new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</>}
+            {showSocialActions && <FavoriteButton scoreId={item.id || title} />}
+          </div>
 
           {/* Quick info grid */}
           <div
@@ -261,8 +269,6 @@ export default function ScoreDetail({ score, onBack, onEdit, onDelete }) {
 
           {/* Main Action Bar */}
           <div className="detail-actions">
-            <FavoriteButton scoreId={item.id || title} />
-
             <a
               href={fileUrl}
               download={fileName}
@@ -274,7 +280,7 @@ export default function ScoreDetail({ score, onBack, onEdit, onDelete }) {
               <Download size={16} /> Unduh Partitur PDF
             </a>
 
-            <button
+            {showSocialActions && <button
               type="button"
               className={`btn btn--outline ${copied ? 'btn--success' : ''}`}
               onClick={handleShare}
@@ -282,11 +288,16 @@ export default function ScoreDetail({ score, onBack, onEdit, onDelete }) {
             >
               {copied ? <Check size={16} /> : <Share2 size={16} />}
               {copied ? 'Tautan Disalin!' : 'Bagikan'}
-            </button>
+            </button>}
 
             {onEdit && (
               <button type="button" className="btn btn--outline" onClick={() => onEdit(item)}>
                 Edit Partitur
+              </button>
+            )}
+            {onRestore && (
+              <button type="button" className="btn btn--outline" onClick={() => onRestore(item)}>
+                <RotateCcw size={16} /> Pulihkan ke Katalog
               </button>
             )}
             {onDelete && (

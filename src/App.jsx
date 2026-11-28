@@ -1,11 +1,12 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { Loader } from 'lucide-react'
 import Header from './components/Header.jsx'
-import Footer from './components/Footer.jsx'
 import PWABadge from './components/PWABadge.jsx'
 import ConfirmModal from './components/modals/ConfirmModal.jsx'
 import SplashScreen from './components/common/SplashScreen.jsx'
 import scoreService from './services/scoreService.js'
+import authService from './services/authService.js'
+import { canManageScore, canUpload } from './utils/permissions.js'
 import './App.css'
 
 // ---------------------------------------------------------------------------
@@ -20,6 +21,7 @@ const EditScorePage = lazy(() => import('./pages/EditScorePage.jsx'))
 const ScoreDetail = lazy(() => import('./components/score/ScoreDetail.jsx'))
 const About = lazy(() => import('./pages/About.jsx'))
 const Contact = lazy(() => import('./pages/Contact.jsx'))
+const ArchivePage = lazy(() => import('./pages/ArchivePage.jsx'))
 
 function App() {
   const [showSplash, setShowSplash] = useState(true)
@@ -29,6 +31,12 @@ function App() {
   const [editingScore, setEditingScore] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
+  const [profile, setProfile] = useState(() => authService.getCurrentProfile())
+
+  useEffect(() => {
+    authService.refreshProfile().then(setProfile).catch(() => setProfile(authService.getCurrentProfile()))
+    return authService.onAuthChanged(() => setProfile(authService.getCurrentProfile()))
+  }, [])
 
   // URL synchronization helper for sharelink & deep linking
   const syncUrl = (scoreId) => {
@@ -110,7 +118,7 @@ function App() {
       <Header
         tab={mode === 'list' ? tab : ''}
         onTab={(newTab) => handleNavigate(newTab)}
-        onNavigateCreate={() => handleNavigate('Create')}
+        onNavigateCreate={canUpload(profile) ? () => handleNavigate('Create') : () => handleNavigate('Profile')}
       />
 
       <main className="main">
@@ -148,8 +156,8 @@ function App() {
             <ScoreDetail
               score={selectedScore}
               onBack={handleBackToList}
-              onEdit={(s) => handleNavigate('Edit', s)}
-              onDelete={(s) => setDeleteTarget(s)}
+              onEdit={canManageScore(selectedScore, profile) ? (s) => handleNavigate('Edit', s) : undefined}
+              onDelete={canManageScore(selectedScore, profile) ? (s) => setDeleteTarget(s) : undefined}
             />
           )}
 
@@ -159,6 +167,7 @@ function App() {
               {tab === 'Catalog' && (
                 <Catalog
                   onNavigate={(destination, payload) => handleNavigate(destination, payload)}
+                  profile={profile}
                 />
               )}
               {tab === 'Favorites' && (
@@ -168,10 +177,11 @@ function App() {
                 />
               )}
               {tab === 'Profile' && (
-                <ProfilePage onReplaySplash={() => setShowSplash(true)} />
+                <ProfilePage onReplaySplash={() => setShowSplash(true)} onAuthChange={setProfile} />
               )}
               {tab === 'About' && <About />}
               {tab === 'Contact' && <Contact />}
+              {tab === 'Archive' && <ArchivePage profile={profile} onNavigate={(destination, payload) => handleNavigate(destination, payload)} />}
             </>
           )}
         </Suspense>
@@ -180,13 +190,18 @@ function App() {
       {/* Global Delete Confirmation */}
       <ConfirmModal
         open={Boolean(deleteTarget)}
-        title="Hapus Partitur"
-        message={`Apakah Anda yakin ingin menghapus "${deleteTarget?.title || deleteTarget?.name}"? Tindakan ini tidak dapat dibatalkan.`}
-        confirmLabel="Hapus"
+        title="Arsipkan Partitur"
+        message={`Pindahkan "${deleteTarget?.title || deleteTarget?.name}" ke arsip? Partitur masih dapat dihapus permanen dari halaman Arsip.`}
+        confirmLabel="Arsipkan"
         danger
         loading={deleting}
         onConfirm={async () => {
           if (!deleteTarget) return
+          if (!canManageScore(deleteTarget, profile)) {
+            alert('Anda hanya dapat menghapus unggahan sendiri. Admin dapat menghapus semua partitur.')
+            setDeleteTarget(null)
+            return
+          }
           try {
             setDeleting(true)
             await scoreService.deleteScore(deleteTarget.id)
@@ -203,7 +218,6 @@ function App() {
       />
 
       <PWABadge />
-      <Footer />
     </div>
   )
 }

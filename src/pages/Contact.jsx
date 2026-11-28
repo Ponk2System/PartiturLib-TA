@@ -1,14 +1,15 @@
 function Contact() {
   return (
     <div className="page" style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <h1 className="display">Hubungi Kami</h1>
+      <h1 className="display">Profil Admin</h1>
       <p className="lede">
-        Punya pertanyaan seputar pengarsipan partitur, lisensi karya, atau ingin berkontribusi partitur orkestra?
+        Punya pertanyaan seputar musik, pengarsipan partitur, lisensi karya, atau ingin berkontribusi partitur orkestra? Hubungi:
       </p>
       <div style={{ marginTop: '20px', lineHeight: '1.8' }}>
-        <p><strong>Email:</strong> library@partiturlib.edu</p>
-        <p><strong>Ruang Arsip:</strong> Gedung Musik &amp; Seni Pertunjukan, Kampus Utama</p>
-        <p><strong>Jam Operasional:</strong> Senin – Jumat, 08.00 – 17.00 WIB</p>
+        <p><strong>Nama Lengkap:</strong> Cornelius Fransinatra Wijaya</p>
+        <p><strong>NIM:</strong> 21120124140141</p>
+        <p><strong>Email:</strong> fransinatra@students.undip.ac.id</p>
+        <p><strong>Instagram:</strong> @corneliusfransinatra</p>
       </div>
     </div>
   )

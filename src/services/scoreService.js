@@ -1,6 +1,7 @@
 import { apiClient, IS_SUPABASE } from '../config/api'
 import { invalidateScoresCache } from '../utils/queryCache'
 import SCORES_FALLBACK from '../data/scores'
+import { isAuthenticated } from './authService'
 
 // ---------------------------------------------------------------------------
 // Normalizer — standardizes score shape whether received from Supabase
@@ -80,6 +81,8 @@ export const normalizeScore = (item) => {
     steps: movementsList, // Compatibility
     duration: item.duration || '05:00',
     created_at: item.created_at || new Date().toISOString(),
+    uploader_id: item.uploader_id || null,
+    uploader_name: item.uploader_name || 'PartiturLib',
   }
 }
 
@@ -122,6 +125,7 @@ class ScoreService {
       }
 
       try {
+        queryParts.push('archived_at=is.null')
         const url = `/rest/v1/scores?${queryParts.join('&')}`
         const raw = await apiClient.get(url)
         const items = Array.isArray(raw) ? raw.map(normalizeScore) : []
@@ -176,7 +180,7 @@ class ScoreService {
   async getScoreById(id) {
     if (IS_SUPABASE) {
       try {
-        const raw = await apiClient.get(`/rest/v1/scores?id=eq.${id}&select=*`)
+        const raw = await apiClient.get(`/rest/v1/scores?id=eq.${id}&archived_at=is.null&select=*`)
         const item = Array.isArray(raw) ? raw[0] : raw
         if (item) {
           return { success: true, data: normalizeScore(item) }
@@ -198,6 +202,7 @@ class ScoreService {
    * Create a new score.
    */
   async createScore(scoreData) {
+    if (!isAuthenticated()) throw new Error('Silakan masuk dengan akun Anda untuk mengunggah partitur.')
     invalidateScoresCache()
 
     const payload = {
@@ -250,6 +255,7 @@ class ScoreService {
    * Update an existing score.
    */
   async updateScore(id, scoreData) {
+    if (!isAuthenticated()) throw new Error('Silakan masuk terlebih dahulu.')
     invalidateScoresCache()
 
     const payload = {
@@ -295,16 +301,47 @@ class ScoreService {
   }
 
   /**
-   * Delete a score by ID.
+   * Move a score to the archive. Permanent deletion is kept separate so an
+   * accidental delete can still be managed from the archive.
    */
   async deleteScore(id) {
+    if (!isAuthenticated()) throw new Error('Silakan masuk terlebih dahulu.')
     invalidateScoresCache()
 
     if (IS_SUPABASE) {
-      await apiClient.delete(`/rest/v1/scores?id=eq.${id}`)
+      await apiClient.patch(`/rest/v1/scores?id=eq.${id}`, {
+        archived_at: new Date().toISOString(),
+      })
       return { success: true }
     }
 
+    return { success: true }
+  }
+
+  async getArchivedScores() {
+    if (!isAuthenticated()) throw new Error('Silakan masuk terlebih dahulu.')
+    if (IS_SUPABASE) {
+      const raw = await apiClient.get('/rest/v1/scores?archived_at=not.is.null&select=*&order=archived_at.desc')
+      return { success: true, data: Array.isArray(raw) ? raw.map(normalizeScore) : [] }
+    }
+    return { success: true, data: [] }
+  }
+
+  async permanentlyDeleteScore(id) {
+    if (!isAuthenticated()) throw new Error('Silakan masuk terlebih dahulu.')
+    invalidateScoresCache()
+    if (IS_SUPABASE) {
+      await apiClient.delete(`/rest/v1/scores?id=eq.${id}`)
+    }
+    return { success: true }
+  }
+
+  async restoreScore(id) {
+    if (!isAuthenticated()) throw new Error('Silakan masuk terlebih dahulu.')
+    invalidateScoresCache()
+    if (IS_SUPABASE) {
+      await apiClient.patch(`/rest/v1/scores?id=eq.${id}`, { archived_at: null })
+    }
     return { success: true }
   }
 

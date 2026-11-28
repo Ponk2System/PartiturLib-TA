@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { getAccessToken } from '../services/authService'
 
 // ---------------------------------------------------------------------------
 // Base URL & Supabase Key Configuration
@@ -37,9 +38,7 @@ apiClient.interceptors.request.use(
   (config) => {
     if (IS_SUPABASE && SUPABASE_KEY) {
       config.headers['apikey'] = SUPABASE_KEY
-      if (!config.headers['Authorization']) {
-        config.headers['Authorization'] = `Bearer ${SUPABASE_KEY}`
-      }
+      if (!config.headers['Authorization']) config.headers['Authorization'] = `Bearer ${getAccessToken() || SUPABASE_KEY}`
     }
     return config
   },

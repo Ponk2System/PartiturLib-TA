@@ -22,11 +22,12 @@ import {
   sortItems,
   extractCategories,
 } from '../utils/helpers'
+import { canManageScore, canUpload } from '../utils/permissions'
 
 /**
  * Catalog page — Main sheet music listing and repertoire explorer.
  */
-export default function Catalog({ onNavigate }) {
+export default function Catalog({ onNavigate, profile }) {
   // ---- API data ----
   const { scores: apiScores, loading, error, refetch } = useScores({ limit: 50 })
   const [useLocal, setUseLocal] = useState(false)
@@ -80,6 +81,11 @@ export default function Catalog({ onNavigate }) {
 
   const handleDelete = async () => {
     if (!deleteTarget) return
+    if (!canManageScore(deleteTarget, profile)) {
+      setDeleteError('Anda hanya dapat menghapus partitur yang Anda unggah sendiri.')
+      setDeleteTarget(null)
+      return
+    }
     try {
       setDeleting(true)
       setDeleteError('')
@@ -99,11 +105,11 @@ export default function Catalog({ onNavigate }) {
       <ScoreDetail
         score={selectedScore}
         onBack={() => setSelectedScore(null)}
-        onEdit={(s) => onNavigate && onNavigate('Edit', s)}
-        onDelete={(s) => {
+        onEdit={canManageScore(selectedScore, profile) ? (s) => onNavigate && onNavigate('Edit', s) : undefined}
+        onDelete={canManageScore(selectedScore, profile) ? (s) => {
           setSelectedScore(null)
           setDeleteTarget(s)
-        }}
+        } : undefined}
       />
     )
   }
@@ -132,10 +138,10 @@ export default function Catalog({ onNavigate }) {
               <button
                 type="button"
                 className="btn btn--primary btn--sm"
-                onClick={() => onNavigate('Create')}
+                onClick={() => onNavigate(canUpload(profile) ? 'Create' : 'Profile')}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
-                <Plus size={16} /> Unggah Partitur PDF
+                <Plus size={16} /> {canUpload(profile) ? 'Unggah Partitur PDF' : 'Masuk untuk Mengunggah'}
               </button>
             )}
           </div>
@@ -199,8 +205,8 @@ export default function Catalog({ onNavigate }) {
                   key={score.id || score.title || score.name}
                   score={score}
                   onSelect={setSelectedScore}
-                  onEdit={onNavigate ? (s) => onNavigate('Edit', s) : undefined}
-                  onDelete={setDeleteTarget}
+                  onEdit={canManageScore(score, profile) && onNavigate ? (s) => onNavigate('Edit', s) : undefined}
+                  onDelete={canManageScore(score, profile) ? setDeleteTarget : undefined}
                 />
               ))}
             </ul>
@@ -279,9 +285,9 @@ export default function Catalog({ onNavigate }) {
       {/* Delete confirmation */}
       <ConfirmModal
         open={!!deleteTarget}
-        title="Hapus Partitur"
-        message={`Apakah Anda yakin ingin menghapus "${deleteTarget?.title || deleteTarget?.name}"? Tindakan ini tidak dapat dibatalkan.`}
-        confirmLabel="Hapus"
+        title="Arsipkan Partitur"
+        message={`Pindahkan "${deleteTarget?.title || deleteTarget?.name}" ke arsip? Partitur masih dapat dihapus permanen dari halaman Arsip.`}
+        confirmLabel="Arsipkan"
         danger
         loading={deleting}
         onConfirm={handleDelete}

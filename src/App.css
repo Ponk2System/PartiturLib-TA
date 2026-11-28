@@ -43,9 +43,6 @@ body {
   .mobile-only {
     display: none !important;
   }
-  .bottom-nav {
-    display: none !important;
-  }
   .desktop-only {
     display: flex !important;
   }
@@ -219,6 +216,13 @@ body {
   padding-left: max(4px, env(safe-area-inset-left, 4px));
   padding-right: max(4px, env(safe-area-inset-right, 4px));
   box-shadow: 0 -2px 12px rgba(24, 34, 44, 0.08);
+}
+
+/* Must follow .bottom-nav because its mobile display uses !important. */
+@media (min-width: 768px) {
+  .bottom-nav {
+    display: none !important;
+  }
 }
 
 .bottom-nav-item {
@@ -1165,6 +1169,25 @@ body {
   box-sizing: border-box;
 }
 
+.detail-uploader {
+  font-size: 0.9rem;
+  color: var(--steel);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 12px 0 16px;
+}
+
+.detail-uploader .fav-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  margin-left: auto;
+  flex: 0 0 36px;
+}
+
 @media (min-width: 640px) {
   .detail-actions {
     flex-direction: row;
@@ -1895,6 +1918,16 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.avatar-wrap--admin .avatar-placeholder {
+  color: var(--brass);
+  background: rgba(166, 124, 46, 0.1);
+}
+
+.avatar-wrap--user .avatar-placeholder {
+  color: var(--steel);
+  background: rgba(90, 102, 115, 0.1);
 }
 
 .avatar-upload-btn {

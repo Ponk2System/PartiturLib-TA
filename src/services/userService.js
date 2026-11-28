@@ -1,136 +1,31 @@
-// ---------------------------------------------------------------------------
-// User identity — generates and persists a unique client identifier in
-// localStorage so the Favorites and Reviews APIs can associate data with
-// this browser session.  No authentication is involved.
-// ---------------------------------------------------------------------------
+// Compatibility helpers used by favorites/reviews. Score ownership itself is
+// enforced by Supabase Auth and RLS, never by this browser-only identifier.
+import authService from './authService'
 
-const USER_IDENTIFIER_KEY = 'partiturlib_user_id'
-const USER_PROFILE_KEY = 'partiturlib_user_profile'
-const LEGACY_IDENTIFIER_KEY = 'partitur_lib_user_id'
-const LEGACY_PROFILE_KEY = 'partitur_lib_user_profile'
+const LEGACY_ID_KEY = 'partiturlib_legacy_user_id'
 
-/**
- * Check if a string is a valid UUID
- */
-const isValidUUID = (str) =>
-  typeof str === 'string' &&
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str)
-
-/**
- * Generate a standard RFC4122 v4 UUID
- */
-const generateUUID = () => {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID()
-  }
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0
-    const v = c === 'x' ? r : (r & 0x3) | 0x8
-    return v.toString(16)
-  })
-}
-
-/**
- * Return a stable, randomly-generated user identifier (UUID).
- * Compatible with Supabase PostgreSQL UUID foreign keys.
- * Creates one on first call and stores it in localStorage.
- */
-export const getUserIdentifier = () => {
+const legacyId = () => {
   try {
-    let userId = localStorage.getItem(USER_IDENTIFIER_KEY) || localStorage.getItem(LEGACY_IDENTIFIER_KEY)
-    if (!userId || !isValidUUID(userId)) {
-      userId = generateUUID()
-      localStorage.setItem(USER_IDENTIFIER_KEY, userId)
+    let id = localStorage.getItem(LEGACY_ID_KEY)
+    if (!id) {
+      id = crypto.randomUUID ? crypto.randomUUID() : `local-${Date.now()}`
+      localStorage.setItem(LEGACY_ID_KEY, id)
     }
-    return userId
-  } catch {
-    // Private / incognito mode may throw — return a transient UUID.
-    return generateUUID()
-  }
+    return id
+  } catch { return `local-${Date.now()}` }
 }
 
-/**
- * Return the user profile object stored in localStorage, or a sensible
- * default.  The profile is purely cosmetic (username for reviews, etc.).
- */
+export const getUserIdentifier = () => authService.getSession()?.user?.id || legacyId()
 export const getUserProfile = () => {
-  try {
-    const raw = localStorage.getItem(USER_PROFILE_KEY) || localStorage.getItem(LEGACY_PROFILE_KEY)
-    if (raw) return JSON.parse(raw)
-  } catch {
-    /* corrupted data — fall through to default */
-  }
-  return {
-    username: 'Musisi',
-    avatar: null,
-    bio: '',
-    userId: getUserIdentifier(),
-  }
+  const profile = authService.getCurrentProfile()
+  if (profile) return { ...profile, userId: profile.id }
+  return { username: 'Tamu', avatar: null, bio: '', userId: null, role: 'guest' }
 }
 
-/**
- * Persist an updated profile object.
- */
-export const saveUserProfile = (profile) => {
-  try {
-    const data = {
-      ...profile,
-      userId: getUserIdentifier(),
-      updatedAt: new Date().toISOString(),
-    }
-    localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(data))
-    return { success: true, data }
-  } catch (err) {
-    return { success: false, message: err.message }
-  }
-}
+export const saveUserProfile = (profile) => ({ success: true, data: profile })
+export const updateUsername = () => ({ success: false, message: 'Gunakan halaman profil akun.' })
+export const updateBio = updateUsername
+export const updateAvatar = updateUsername
+export const resetUserIdentifier = () => legacyId()
 
-/**
- * Update username
- */
-export const updateUsername = (username) => {
-  const profile = getUserProfile()
-  profile.username = username.trim() || 'Shooter'
-  return saveUserProfile(profile)
-}
-
-/**
- * Update bio
- */
-export const updateBio = (bio) => {
-  const profile = getUserProfile()
-  profile.bio = bio.trim()
-  return saveUserProfile(profile)
-}
-
-/**
- * Update avatar
- */
-export const updateAvatar = (avatarBase64) => {
-  const profile = getUserProfile()
-  profile.avatar = avatarBase64
-  return saveUserProfile(profile)
-}
-
-/**
- * Reset identifier (generates a new anonymous identifier)
- */
-export const resetUserIdentifier = () => {
-  try {
-    localStorage.removeItem(USER_IDENTIFIER_KEY)
-    localStorage.removeItem(USER_PROFILE_KEY)
-    return getUserIdentifier()
-  } catch {
-    return `anon_${Date.now()}`
-  }
-}
-
-export default {
-  getUserIdentifier,
-  getUserProfile,
-  saveUserProfile,
-  updateUsername,
-  updateBio,
-  updateAvatar,
-  resetUserIdentifier,
-}
+export default { getUserIdentifier, getUserProfile, saveUserProfile, updateUsername, updateBio, updateAvatar, resetUserIdentifier }

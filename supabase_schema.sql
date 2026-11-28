@@ -414,3 +414,131 @@ VALUES
     'Bagian paling megah dan penuh sukacita dari suite The Planets Holst, memuat tema melodi himne agung "Thaxted" ("I Vow to Thee, My Country").',
     '08:10'
 );
+
+-- ============================================================================
+-- 8. ACCOUNTS, ROLES, AND OWNERSHIP (run this migration after the schema above)
+-- Auth users are managed by Supabase Auth. Every registered user receives the
+-- `user` role. Promote an administrator explicitly with the UPDATE below.
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    username TEXT NOT NULL DEFAULT 'Musisi',
+    bio TEXT NOT NULL DEFAULT '',
+    avatar TEXT,
+    role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.scores ADD COLUMN IF NOT EXISTS uploader_id UUID REFERENCES auth.users(id) ON DELETE SET NULL;
+ALTER TABLE public.scores ADD COLUMN IF NOT EXISTS uploader_name TEXT;
+ALTER TABLE public.scores ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id, username)
+  VALUES (NEW.id, COALESCE(NULLIF(NEW.raw_user_meta_data->>'username', ''), split_part(NEW.email, '@', 1), 'Musisi'))
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+CREATE OR REPLACE FUNCTION public.lock_profile_role()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF TG_OP = 'UPDATE' THEN
+    NEW.id := OLD.id;
+    NEW.role := OLD.role;
+  END IF;
+  NEW.updated_at := NOW();
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS lock_profile_role_trigger ON public.profiles;
+CREATE TRIGGER lock_profile_role_trigger
+  BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE PROCEDURE public.lock_profile_role();
+
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$ SELECT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin') $$;
+
+CREATE OR REPLACE FUNCTION public.set_score_uploader()
+RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    NEW.uploader_id := auth.uid();
+    SELECT username INTO NEW.uploader_name FROM public.profiles WHERE id = auth.uid();
+    NEW.uploader_name := COALESCE(NEW.uploader_name, 'Musisi');
+  ELSE
+    NEW.uploader_id := OLD.uploader_id;
+    NEW.uploader_name := OLD.uploader_name;
+  END IF;
+  NEW.updated_at := NOW();
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS set_score_uploader_trigger ON public.scores;
+CREATE TRIGGER set_score_uploader_trigger
+  BEFORE INSERT OR UPDATE ON public.scores FOR EACH ROW EXECUTE PROCEDURE public.set_score_uploader();
+
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Profiles are publicly readable" ON public.profiles;
+CREATE POLICY "Profiles are publicly readable" ON public.profiles FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users update own non-role profile" ON public.profiles;
+CREATE POLICY "Users update own non-role profile" ON public.profiles FOR UPDATE USING (id = auth.uid()) WITH CHECK (id = auth.uid());
+
+-- Replace the old public write policies. Reads stay public; uploads require an
+-- authenticated account; users may only change/delete their own score; admins
+-- can manage every score.
+DROP POLICY IF EXISTS "Allow public insert scores" ON public.scores;
+DROP POLICY IF EXISTS "Allow public update scores" ON public.scores;
+DROP POLICY IF EXISTS "Allow public delete scores" ON public.scores;
+DROP POLICY IF EXISTS "Authenticated users insert their scores" ON public.scores;
+DROP POLICY IF EXISTS "Owners or admins update scores" ON public.scores;
+DROP POLICY IF EXISTS "Owners or admins delete scores" ON public.scores;
+CREATE POLICY "Authenticated users insert their scores" ON public.scores
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY "Owners or admins update scores" ON public.scores
+  FOR UPDATE TO authenticated
+  USING (uploader_id = auth.uid() OR public.is_admin())
+  WITH CHECK (uploader_id = auth.uid() OR public.is_admin());
+CREATE POLICY "Owners or admins delete scores" ON public.scores
+  FOR DELETE TO authenticated USING (uploader_id = auth.uid() OR public.is_admin());
+
+-- Files can be read publicly to keep existing score links working, but only a
+-- signed-in account may place or modify files in the score bucket.
+DROP POLICY IF EXISTS "Allow public insert scores storage" ON storage.objects;
+DROP POLICY IF EXISTS "Allow public update scores storage" ON storage.objects;
+DROP POLICY IF EXISTS "Allow public delete scores storage" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users upload scores storage" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users update scores storage" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users delete scores storage" ON storage.objects;
+CREATE POLICY "Authenticated users upload scores storage" ON storage.objects
+  FOR INSERT TO authenticated WITH CHECK (bucket_id = 'scores');
+CREATE POLICY "Authenticated users update scores storage" ON storage.objects
+  FOR UPDATE TO authenticated USING (bucket_id = 'scores') WITH CHECK (bucket_id = 'scores');
+CREATE POLICY "Authenticated users delete scores storage" ON storage.objects
+  FOR DELETE TO authenticated USING (bucket_id = 'scores');
+
+-- Execute once after registering the chosen administrator (replace the email).
+-- The trigger is temporarily disabled only for this administrator promotion,
+-- then enabled again so users cannot change their own role from the app.
+-- ALTER TABLE public.profiles DISABLE TRIGGER lock_profile_role_trigger;
+-- UPDATE public.profiles SET role = 'admin' WHERE id = (SELECT id FROM auth.users WHERE email = 'admin@example.com');
+-- ALTER TABLE public.profiles ENABLE TRIGGER lock_profile_role_trigger;
