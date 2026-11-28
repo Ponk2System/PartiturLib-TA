@@ -82,7 +82,7 @@ export default function SplashScreen({ onFinish, duration = 3500 }) {
         <ArrowRight size={15} />
       </button>
 
-      <span className="splash-hint">TA PPB 2026</span>
+      <span className="splash-hint">TA PPB 2026b</span>
     </main>
   )
 }
