@@ -19,6 +19,7 @@ import {
 import FavoriteButton from '../common/FavoriteButton'
 import { useReviews, useCreateReview } from '../../hooks/useReviews'
 import { getUserIdentifier } from '../../services/userService'
+import scoreService from '../../services/scoreService'
 import { averageRating } from '../../utils/helpers'
 
 /**
@@ -57,6 +58,37 @@ export default function ScoreDetail({ score, onBack, onEdit, onDelete, onRestore
   const reviewCount = item.review_count ?? reviews.length
 
   const [copied, setCopied] = useState(false)
+  const [downloadCounts, setDownloadCounts] = useState({})
+  const [downloadError, setDownloadError] = useState('')
+  const downloadCount = downloadCounts[item.id] ?? Number(item.download_count || 0)
+
+  const handleDownload = () => {
+    setDownloadError('')
+
+    void scoreService
+      .recordDownload(item.id, downloadCount)
+      .then((result) => {
+        if (!result.success) {
+          throw new Error('Gagal mencatat unduhan.')
+        }
+
+        setDownloadCounts((previous) => ({
+          ...previous,
+          [item.id]: result.download_count,
+        }))
+        window.dispatchEvent(
+          new CustomEvent('partiturlib:download-updated', {
+            detail: {
+              scoreId: item.id,
+              downloadCount: result.download_count,
+            },
+          }),
+        )
+      })
+      .catch(() => {
+        setDownloadError('File tetap dibuka, tetapi jumlah unduhan belum dapat diperbarui.')
+      })
+  }
 
   const handleShare = async () => {
     const shareUrl = `${window.location.origin}${window.location.pathname}?score=${encodeURIComponent(item.id || title)}`
@@ -258,6 +290,10 @@ export default function ScoreDetail({ score, onBack, onEdit, onDelete, onRestore
                 <strong>{item.file_size}</strong>
               </div>
             )}
+            <div>
+              <span style={{ fontSize: '0.75rem', color: 'var(--steel)', display: 'block' }}>Total Diunduh</span>
+              <strong>{downloadCount.toLocaleString('id-ID')} kali</strong>
+            </div>
           </div>
 
           {avgRating > 0 && (
@@ -274,10 +310,11 @@ export default function ScoreDetail({ score, onBack, onEdit, onDelete, onRestore
               download={fileName}
               target="_blank"
               rel="noreferrer"
+              onClick={handleDownload}
               className="btn btn--primary"
               style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}
             >
-              <Download size={16} /> Unduh Partitur PDF
+              <Download size={16} /> Unduh Partitur PDF ({downloadCount.toLocaleString('id-ID')})
             </a>
 
             {showSocialActions && <button
@@ -306,6 +343,7 @@ export default function ScoreDetail({ score, onBack, onEdit, onDelete, onRestore
               </button>
             )}
           </div>
+          {downloadError && <p className="detail-error" role="status">{downloadError}</p>}
         </div>
       </div>
 

@@ -435,6 +435,34 @@ ALTER TABLE public.scores ADD COLUMN IF NOT EXISTS uploader_id UUID REFERENCES a
 ALTER TABLE public.scores ADD COLUMN IF NOT EXISTS uploader_name TEXT;
 ALTER TABLE public.scores ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
 
+-- Global download counter. It is incremented through the RPC below so
+-- simultaneous download requests never overwrite each other.
+ALTER TABLE public.scores ADD COLUMN IF NOT EXISTS download_count BIGINT NOT NULL DEFAULT 0;
+
+CREATE OR REPLACE FUNCTION public.increment_score_download(score_id BIGINT)
+RETURNS BIGINT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  next_count BIGINT;
+BEGIN
+  UPDATE public.scores
+  SET download_count = download_count + 1
+  WHERE id = score_id
+  RETURNING download_count INTO next_count;
+
+  IF next_count IS NULL THEN
+    RAISE EXCEPTION 'Score not found';
+  END IF;
+
+  RETURN next_count;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.increment_score_download(BIGINT) TO anon, authenticated;
+
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Share2, Check, FileText, UserRound, CalendarDays, RotateCcw } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Share2, Check, Download, FileText, UserRound, CalendarDays, RotateCcw } from 'lucide-react'
 import FavoriteButton from '../common/FavoriteButton'
 import { truncate } from '../../utils/helpers'
 
@@ -8,6 +8,7 @@ import { truncate } from '../../utils/helpers'
  */
 export default function ScoreCard({ score, onSelect, onEdit, onDelete, onRestore, deleteLabel = 'Hapus Partitur', showSocialActions = true }) {
   const [copied, setCopied] = useState(false)
+  const [downloadCount, setDownloadCount] = useState(Number(score?.download_count || 0))
   const item = score || {}
 
   const title = item.title || item.name || 'Untitled Score'
@@ -21,6 +22,17 @@ export default function ScoreCard({ score, onSelect, onEdit, onDelete, onRestore
     item.image_url ||
     item.image ||
     'https://images.unsplash.com/photo-1507838153414-b4b713384a76?auto=format&fit=crop&w=800&q=80'
+
+  useEffect(() => {
+    const handleDownloadUpdate = (event) => {
+      if (String(event.detail?.scoreId) === String(item.id)) {
+        setDownloadCount(Number(event.detail.downloadCount) || 0)
+      }
+    }
+
+    window.addEventListener('partiturlib:download-updated', handleDownloadUpdate)
+    return () => window.removeEventListener('partiturlib:download-updated', handleDownloadUpdate)
+  }, [item.id])
 
   const handleShare = async (e) => {
     e.stopPropagation()
@@ -226,6 +238,21 @@ export default function ScoreCard({ score, onSelect, onEdit, onDelete, onRestore
               <span>{item.duration}</span>
             </span>
           )}
+          <span
+            className="card-footer-item"
+            style={{
+              fontSize: '0.8rem',
+              color: 'var(--steel)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              lineHeight: 1.2,
+              whiteSpace: 'nowrap',
+            }}
+            title={`${downloadCount.toLocaleString('id-ID')} kali diunduh`}
+          >
+            <Download size={13} /> {downloadCount.toLocaleString('id-ID')}
+          </span>
         </div>
       </button>
 

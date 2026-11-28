@@ -80,6 +80,7 @@ export const normalizeScore = (item) => {
     movements: movementsList,
     steps: movementsList, // Compatibility
     duration: item.duration || '05:00',
+    download_count: Number(item.download_count || 0),
     created_at: item.created_at || new Date().toISOString(),
     uploader_id: item.uploader_id || null,
     uploader_name: item.uploader_name || 'PartiturLib',
@@ -343,6 +344,29 @@ class ScoreService {
       await apiClient.patch(`/rest/v1/scores?id=eq.${id}`, { archived_at: null })
     }
     return { success: true }
+  }
+
+  /**
+   * Increment the public download counter with a database-side atomic update.
+   * The RPC avoids lost updates when multiple people download the same score.
+   */
+  async recordDownload(id, currentCount = 0) {
+    if (!id) {
+      return { success: false, download_count: Number(currentCount) || 0 }
+    }
+
+    if (IS_SUPABASE) {
+      const count = await apiClient.post('/rest/v1/rpc/increment_score_download', {
+        score_id: id,
+      })
+      invalidateScoresCache()
+      return { success: true, download_count: Number(count) || 0 }
+    }
+
+    return {
+      success: true,
+      download_count: (Number(currentCount) || 0) + 1,
+    }
   }
 
   // -------------------------------------------------------------------------
